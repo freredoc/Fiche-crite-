@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Quiz Permis D</title>
+<style>
+  :root {
+    --bg: #0d1b2a;
+    --card: #112236;
+    --border: #1a3a5c;
+    --green: #4ade80;
+    --green-dim: #0a2318;
+    --red: #f87171;
+    --red-dim: #280d0d;
+    --yellow: #fbbf24;
+    --text: #e2eaf4;
+    --muted: #4a6a88;
+    --accent: #60a5fa;
+    --accent-dim: #0c1e38;
+    --input-bg: #0a1622;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .screen { display: none; width: 100%; max-width: 540px; }
+  .screen.active { display: block; }
+
+  /* ── HOME ── */
+  .home-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 18px;
+    padding: 36px 24px 32px;
+  }
+  .home-hero { text-align: center; margin-bottom: 32px; }
+  .home-hero .bus { font-size: 52px; display: block; margin-bottom: 8px; }
+  .home-hero h1 {
+    font-family: ui-monospace, 'Courier New', Courier, monospace;
+    font-size: 26px; font-weight: 700;
+    color: var(--green);
+    letter-spacing: 4px;
+    margin-bottom: 6px;
+  }
+  .home-hero p { color: var(--muted); font-size: 11px; letter-spacing: 2px; }
+
+  .field-label { color: var(--muted); font-size: 11px; letter-spacing: 1px; display: block; margin-bottom: 8px; }
+
+  .count-row { display: flex; gap: 8px; margin-bottom: 20px; }
+  .count-btn {
+    flex: 1; padding: 11px 0;
+    background: var(--input-bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer;
+    font-family: ui-monospace, 'Courier New', Courier, monospace;
+    font-size: 15px; font-weight: 700;
+    transition: all 0.12s;
+  }
+  .count-btn.active {
+    background: var(--accent);
+    color: #0d1b2a;
+    border-color: var(--accent);
+  }
+
+  select {
+    width: 100%; padding: 12px;
+    background: var(--input-bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-family: ui-monospace, 'Courier New', Courier, monospace; font-size: 13px;
+    outline: none; cursor: pointer; margin-bottom: 28px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234a6a88' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .btn-start {
+    width: 100%; padding: 16px;
+    background: var(--green); color: #0d1b2a;
+    border: none; border-radius: 10px; cursor: pointer;
+    font-family: ui-monospace, 'Courier New', Courier, monospace;
+    font-size: 15px; font-weight: 700; letter-spacing: 2px;
+    transition: opacity 0.15s;
+    -webkit-appearance: none;
+  }
+  .btn-start:active { opacity: 0.8; }
+
+  /* ── QUIZ ── */
+  .quiz-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .quiz-meta { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+  .quiz-score { display: flex; gap: 16px; }
+  .score-ok { color: var(--green); font-size: 12px; font-weight: 700; }
+  .score-ko { color: var(--red); font-size: 12px; font-weight: 700; }
+
+  .progress-bar {
+    height: 3px; background: var(--border);
+    border-radius: 2px; margin-bottom: 18px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--green);
+    border-radius: 2px; transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  .question-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 20px;
+    margin-bottom: 14px;
+  }
+  .question-text {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 16px; line-height: 1.75;
+    color: var(--text);
+  }
+
+  .answer-input {
+    width: 100%; padding: 13px 16px;
+    background: var(--input-bg); color: var(--text);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-family: ui-monospace, 'Courier New', Courier, monospace; font-size: 14px;
+    outline: none; margin-bottom: 10px;
+    transition: border-color 0.2s, background 0.2s;
+    -webkit-appearance: none;
+  }
+  .answer-input:focus { border-color: var(--accent); }
+  .answer-input.correct { border-color: var(--green); background: var(--green-dim); }
+  .answer-input.wrong { border-color: var(--red); background: var(--red-dim); }
+  .answer-input:disabled { opacity: 0.9; }
+
+  .feedback {
+    border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 10px; display: none;
+  }
+  .feedback.correct { background: var(--green-dim); border: 2px solid var(--green); display: block; }
+  .feedback.wrong { background: var(--red-dim); border: 2px solid var(--red); display: block; }
+  .feedback-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .feedback-icon { font-size: 18px; line-height: 1; }
+  .feedback-title { font-size: 13px; font-weight: 700; }
+  .feedback.correct .feedback-title { color: var(--green); }
+  .feedback.wrong .feedback-title { color: var(--red); }
+  .feedback-body { font-size: 12px; color: var(--text); line-height: 1.55; }
+  .feedback-answer { color: var(--green); font-size: 13px; font-weight: 700; margin-top: 8px; }
+
+  .btn-row { display: flex; gap: 8px; margin-bottom: 4px; }
+
+  .btn {
+    flex: 1; padding: 14px 10px;
+    border: none; border-radius: 8px; cursor: pointer;
+    font-family: ui-monospace, 'Courier New', Courier, monospace;
+    font-size: 13px; font-weight: 700; letter-spacing: 1px;
+    transition: opacity 0.12s;
+    -webkit-appearance: none;
+  }
+  .btn:active { opacity: 0.75; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-verify { background: var(--accent); color: #0d1b2a; flex: 2; }
+  .btn-skip { background: var(--input-bg); color: var(--muted); border: 1px solid var(--border) !important; }
+  .btn-next-ok { background: var(--green-dim); color: var(--green); border: 2px solid var(--green) !important; }
+  .btn-next-ko { background: var(--red-dim); color: var(--red); border: 2px solid var(--red) !important; }
+  .btn-next-solo { background: var(--green); color: #0d1b2a; }
+
+  .btn-menu {
+    width: 100%; padding: 10px;
+    background: transparent; color: var(--muted);
+    border: none; cursor: pointer;
+    font-family: ui-monospace, 'Courier New', Courier, monospace;
+    font-size: 11px; letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  /* ── RESULT ── */
+  .result-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 18px;
+    padding: 36px 24px 28px;
+  }
+  .result-hero { text-align: center; margin-bottom: 24px; }
+  .result-emoji { font-size: 52px; display: block; margin-bottom: 4px; }
+  .result-pct { font-size: 58px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+  .result-pct.great { color: var(--green); }
+  .result-pct.ok { color: var(--yellow); }
+  .result-pct.bad { color: var(--red); }
+  .result-sub { color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+
+  .errors-title { color: var(--muted); font-size: 10px; letter-spacing: 2px; margin-bottom: 10px; }
+  .errors-list { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+  .error-item {
+    background: var(--red-dim);
+    border: 1px solid #3d1010;
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .error-q { color: #fca5a5; font-size: 11px; line-height: 1.6; margin-bottom: 4px; }
+  .error-user { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+  .error-user em { color: #fca5a5; font-style: italic; }
+  .error-answer { color: var(--green); font-size: 12px; font-weight: 700; }
+
+  .result-btns { display: flex; gap: 10px; }
+  .btn-replay { flex: 1; padding: 13px; background: var(--accent); color: #0d1b2a; border: none; border-radius: 8px; cursor: pointer; font-family: ui-monospace, 'Courier New', Courier, monospace; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+  .btn-home-r { flex: 1; padding: 13px; background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-family: ui-monospace, 'Courier New', Courier, monospace; font-size: 13px; font-weight: 700; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--border); }
+  ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ══ HOME ══════════════════════════════════════════════════════════════════ -->
+<div id="screen-home" class="screen active">
+  <div class="home-card">
+    <div class="home-hero">
+      <span class="bus">🚌</span>
+      <h1>PERMIS D</h1>
+      <p id="home-subtitle">157 QUESTIONS — FICHES ÉCRITES</p>
+    </div>
+
+    <label class="field-label">NOMBRE DE QUESTIONS</label>
+    <div class="count-row">
+      <button class="count-btn" data-n="5">5</button>
+      <button class="count-btn active" data-n="10">10</button>
+      <button class="count-btn" data-n="20">20</button>
+      <button class="count-btn" data-n="50">50</button>
+    </div>
+
+    <label class="field-label">FICHE</label>
+    <select id="fiche-select"></select>
+
+    <button class="btn-start" onclick="startQuiz()">DÉMARRER →</button>
+  </div>
+</div>
+
+<!-- ══ QUIZ ══════════════════════════════════════════════════════════════════ -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-header">
+    <span class="quiz-meta" id="quiz-meta">FICHE 5 · 1/10</span>
+    <div class="quiz-score">
+      <span class="score-ok" id="score-ok">✓ 0</span>
+      <span class="score-ko" id="score-ko">✗ 0</span>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+  <div class="question-card">
+    <p class="question-text" id="question-text"></p>
+  </div>
+
+  <input type="text" class="answer-input" id="answer-input"
+    placeholder="Votre réponse… (Entrée pour valider)"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+    oninput="const b=document.getElementById('btn-verify'); if(b) b.disabled=!this.value.trim();"
+    onkeydown="handleKey(event)" />
+
+  <div class="feedback" id="feedback">
+    <div class="feedback-header">
+      <span class="feedback-icon" id="fb-icon"></span>
+      <span class="feedback-title" id="fb-title"></span>
+    </div>
+    <p class="feedback-body" id="fb-body"></p>
+    <p class="feedback-answer" id="fb-answer" style="display:none"></p>
+  </div>
+
+  <div class="btn-row" id="btn-row">
+    <button class="btn btn-verify" id="btn-verify" onclick="verify()" disabled>VÉRIFIER</button>
+    <button class="btn btn-skip" onclick="skip()">PASSER</button>
+  </div>
+
+  <button class="btn-menu" onclick="goHome()">← MENU</button>
+</div>
+
+<!-- ══ RESULT ════════════════════════════════════════════════════════════════ -->
+<div id="screen-result" class="screen">
+  <div class="result-card">
+    <div class="result-hero">
+      <span class="result-emoji" id="result-emoji">🎉</span>
+      <div class="result-pct" id="result-pct">0%</div>
+      <p class="result-sub" id="result-sub">0 CORRECT · 0 FAUX</p>
+    </div>
+    <p class="errors-title" id="errors-label" style="display:none">À REVOIR :</p>
+    <div class="errors-list" id="errors-list"></div>
+    <div class="result-btns">
+      <button class="btn-replay" onclick="startQuiz()">REJOUER</button>
+      <button class="btn-home-r" onclick="goHome()">MENU</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// DONNÉES
+// ════════════════════════════════════════════════════════════════════════════
+const QUESTIONS = [
+  {id:1,f:5,q:"Un chiffre rouge (ex: 33) dans le rectangle du haut de la plaque orange placée à l'arrière d'un camion signifie un produit de nature à polluer les eaux. Vrai ou Faux ?",r:"Faux"},
+  {id:2,f:5,q:"Un conducteur qui possède les catégories C et D devra-t-il nécessairement effectuer 2 stages de Formation Continue Obligatoire pour pouvoir conduire des camions et des cars ?",r:"Vrai"},
+  {id:3,f:5,q:"Quel document spécifique aux véhicules de transport en commun figure à bord d'un autocar neuf, en plus du certificat d'immatriculation et de l'attestation d'assurance ?",r:"L'attestation d'aménagement"},
+  {id:4,f:5,q:"Vous avez perdu votre 'carte conducteur'. Pouvez-vous conduire en utilisant la carte 'entreprise' que possède votre employeur ?",r:"Non"},
+  {id:5,f:5,q:"Le poids d'un véhicule peut-il être égal à son PTAC ?",r:"Oui"},
+  {id:6,f:5,q:"Vous conduisez un autocar neuf de 22 t de PTAC. Par temps de pluie, à quelle vitesse êtes-vous limité sur route ?",r:"80 km/h"},
+  {id:7,f:5,q:"Le turbocompresseur a pour fonction de diminuer l'air admis dans ses cylindres ?",r:"Non"},
+  {id:8,f:5,q:"Vous avez fait une coupure de 4h (repos). Quelle sera, au minimum, la durée de la période de repos suivante pour être en règle vis-à-vis du repos journalier ?",r:"9 heures"},
+  {id:9,f:5,q:"Après une utilisation intense, quel type de ralentisseur peut provoquer un incendie des freins ?",r:"Ralentisseur électrique"},
+  {id:10,f:6,q:"Quand je circule en Espagne, quel numéro de téléphone est-il conseillé d'utiliser pour appeler les secours à partir d'un portable ?",r:"112"},
+  {id:11,f:6,q:"Âgé de 24 ans, vous venez d'obtenir le permis D et la FIMO voyageur. Pouvez-vous effectuer un trajet Paris-Brest ?",r:"Oui"},
+  {id:12,f:6,q:"Vous avez interrompu votre conduite pendant 45 min. Ce temps peut-il être pris en compte comme le temps de repos journalier ?",r:"Non"},
+  {id:13,f:6,q:"Lors d'un contrôle sur route, dois-je présenter un justificatif de l'emploi pour le (ou les) jour(s) non travaillé(s) ?",r:"Oui"},
+  {id:14,f:6,q:"Comment appelle-t-on un véhicule de transport en commun ne comportant que des places assises ?",r:"Autocar"},
+  {id:15,f:6,q:"Quelle est la longueur maximale d'un transport en commun articulé comportant un article ?",r:"18,75 m"},
+  {id:16,f:6,q:"Dans un véhicule neuf, les passagers doivent-ils être prévenus de l'obligation d'attacher leur ceinture de sécurité ?",r:"Oui"},
+  {id:17,f:7,q:"Peut-il y avoir des voyageurs debout à l'étage supérieur d'un autocar à étages ?",r:"Non"},
+  {id:18,f:7,q:"En cas de grand excès de vitesse, une suspension ou retrait du permis de conduire peut être assortie du permis blanc. Vrai ou Faux ?",r:"Faux"},
+  {id:19,f:7,q:"Un temps de conduite de 4h30 peut être fractionné, au plus, par combien de pauses ?",r:"2"},
+  {id:20,f:7,q:"Est-il possible de fixer à l'arrière d'un car de 15m de long un porte-vélos ou un porte-skis de plus de 70cm de profondeur ?",r:"Oui"},
+  {id:21,f:7,q:"Une boîte de premiers secours est-elle obligatoire dans un autocar ?",r:"Oui"},
+  {id:22,f:7,q:"Vous conduisez un autocar neuf de 10 t de PTAC. À quelle vitesse êtes-vous limité sur route ?",r:"80 km/h"},
+  {id:23,f:7,q:"Certains éléments de la chaîne cinématique nécessitent d'être vidangés ou... ?",r:"Graissés"},
+  {id:24,f:7,q:"Pendant combien de temps les enregistrements des activités des conducteurs doivent-ils être conservés au sein de l'entreprise ?",r:"1 an"},
+  {id:25,f:7,q:"Le circuit électrique alimentant les feux de détresse est-il indépendant du circuit alimentant le coupe-batterie ?",r:"Oui"},
+  {id:26,f:8,q:"Les accidents corporels entre un poids lourd et une voiture sont majoritairement des accidents avec des véhicules circulant dans le même sens. Vrai ou Faux ?",r:"Vrai"},
+  {id:27,f:8,q:"Quelle formation devez-vous effectuer avant de pouvoir conduire un car dans le cadre d'un transport international de voyageurs ?",r:"FIMO"},
+  {id:28,f:8,q:"En double équipage, le temps passé sur la couchette d'un véhicule en circulation doit-il être compté comme repos journalier ?",r:"Non"},
+  {id:29,f:8,q:"Une visite technique peut-elle être imposée à un véhicule de transport en commun impliqué dans un accident ayant provoqué des blessures graves ?",r:"Oui"},
+  {id:30,f:8,q:"En règle générale, quelle est la longueur maximale autorisée pour un autocar ?",r:"18,75 m"},
+  {id:31,f:8,q:"Vous conduisez un autocar neuf de 22 t de PTAC. Par temps de pluie, à quelle vitesse êtes-vous limité sur autoroute ?",r:"100 km/h"},
+  {id:32,f:8,q:"Le châssis d'un véhicule lourd est principalement constitué de longerons et de... ?",r:"Traverses"},
+  {id:33,f:8,q:"Vous avez fait une coupure de 2h à la fin de votre journée de travail. Combien d'heures maximum pouvez-vous conduire la semaine en cours ?",r:"11 heures"},
+  {id:34,f:8,q:"Les extincteurs utilisés sur les véhicules de transport doivent être entretenus et vérifiés de manière régulière. Vrai ou Faux ?",r:"Vrai"},
+  {id:35,f:9,q:"Circulant à vide avec un autocar, vous êtes impliqué dans un accident corporel de la circulation. Devez-vous prévenir votre entreprise ?",r:"Oui"},
+  {id:36,f:9,q:"En France, à partir de quelle quantité d'alcool par litre de sang un conducteur de transport en commun encourt-il une sanction ?",r:"0,20 g/l"},
+  {id:37,f:9,q:"Quelle est la durée maximale de conduite continue autorisée pour un conducteur de véhicule de transport en commun ?",r:"4h30"},
+  {id:38,f:9,q:"La licence de transport intérieur permet-elle d'effectuer des transports avec un car de 45 places, à condition de rester en France ? Vrai ou Faux ?",r:"Faux"},
+  {id:39,f:9,q:"Vous conduisez un autocar comportant un système de climatisation. Quelle peut être sa largeur maximale ?",r:"2,55 m"},
+  {id:40,f:9,q:"Quelle(s) limitation(s) de vitesse est/sont signalée(s) à l'arrière d'un autocar neuf de 26 t de PTAC ?",r:"100 km/h et 90 km/h"},
+  {id:41,f:9,q:"En règle générale, les véhicules lourds utilisent deux batteries de 12 volts montées en... ?",r:"Série"},
+  {id:42,f:9,q:"Combien de périodes consécutives un conducteur assurant un transport national occasionnel de personnes peut-il conduire ? (1 période = 24h)",r:"6 périodes"},
+  {id:43,f:9,q:"Dans un autocar neuf, le conducteur doit-il obligatoirement attacher sa ceinture de sécurité ?",r:"Oui"},
+  {id:44,f:10,q:"Avec votre véhicule, vous avez détérioré des panneaux de signalisation. Devez-vous obligatoirement le signaler à votre compagnie d'assurance ?",r:"Oui"},
+  {id:45,f:10,q:"En double équipage, en France, vous êtes assis à côté du conducteur. Votre temps de conduite continue est-il interrompu ?",r:"Oui"},
+  {id:46,f:10,q:"Le contrôle et le remplacement du liquide de refroidissement s'effectuent moteur chaud ou moteur froid ?",r:"Moteur froid"},
+  {id:47,f:10,q:"Quel est le PTAC maximal d'un véhicule isolé de transport en commun comportant 3 essieux ?",r:"19 t"},
+  {id:48,f:10,q:"Dans un véhicule neuf, les passagers doivent-ils être prévenus de l'obligation d'attacher leur ceinture de sécurité hors agglomération ?",r:"Oui"},
+  {id:49,f:10,q:"Quel symbole devez-vous positionner sur le sélecteur d'activité du chronotachygraphe lorsque vous attendez les passagers ?",r:"Disponibilité"},
+  {id:50,f:10,q:"Quelle est la majoration de PTAC autorisée pour un véhicule de transport en commun équipé d'un ralentisseur ?",r:"4 t"},
+  {id:51,f:11,q:"Le modèle français de constat amiable peut-il être utilisé dans les autres pays de l'Union européenne ?",r:"Oui"},
+  {id:52,f:11,q:"Quel symbole devez-vous afficher sur le chronotachygraphe numérique pendant que vos passagers s'installent dans le véhicule ?",r:"Autres tâches"},
+  {id:53,f:11,q:"Une huile multigrade classée SAE 20W40 peut être utilisée uniquement en hiver ?",r:"Non"},
+  {id:54,f:11,q:"Lors d'un contrôle sur route, en plus de la journée en cours, sur quelle période devez-vous pouvoir présenter les données ?",r:"56 jours précédents"},
+  {id:55,f:11,q:"Votre véhicule de transport en commun comporte 2 essieux. Quelle peut être sa longueur maximale ?",r:"13,50 m"},
+  {id:56,f:11,q:"Tous les pays de l'Union européenne ont adopté les mêmes limitations de vitesse pour les poids lourds. Vrai ou Faux ?",r:"Faux"},
+  {id:57,f:11,q:"Dans un véhicule de transport en commun d'enfants, en rase campagne, ceux-ci peuvent-ils voyager debout ?",r:"Non"},
+  {id:58,f:11,q:"Sauf cas d'urgence, quelle est la durée de conduite maximale journalière autorisée en tenant compte des dérogations possibles ?",r:"10 heures"},
+  {id:59,f:11,q:"Le principal avantage du système de freinage ABS est-il de conserver la maîtrise de la trajectoire du véhicule ?",r:"Oui"},
+  {id:60,f:12,q:"Les accidents mortels entre un poids lourd et une voiture sont majoritairement des accidents avec des véhicules circulant dans le même sens. Vrai ou Faux ?",r:"Faux"},
+  {id:61,f:12,q:"La réglementation sociale européenne s'applique-t-elle à un conducteur non salarié propriétaire de son véhicule ?",r:"Oui"},
+  {id:62,f:12,q:"Parmi les types de graissage moteur, il existe le graissage par pression. Vrai ou Faux ?",r:"Vrai"},
+  {id:63,f:12,q:"La date de la prochaine visite technique est-elle inscrite sur le certificat d'immatriculation du véhicule ?",r:"Oui"},
+  {id:64,f:12,q:"Dans un autocar, quel est le poids moyen forfaitaire d'un voyageur adulte avec ses bagages à main ?",r:"70 kg"},
+  {id:65,f:12,q:"En agglomération, un autobus effectuant un service occasionnel peut-il emprunter une voie réservée aux autobus ?",r:"Non"},
+  {id:66,f:12,q:"En agglomération, la différence de consommation entre un conducteur calme et un conducteur nerveux peut-elle atteindre 40% ?",r:"Vrai"},
+  {id:67,f:12,q:"Quelle peut être la durée maximale de l'amplitude de la journée de travail pour un conducteur de transport en commun effectuant un service occasionnel ?",r:"14 heures"},
+  {id:68,f:12,q:"En cas de panne du chronotachygraphe, le délai maximal de remise en état est fixé à... ?",r:"1 semaine"},
+  {id:69,f:13,q:"Débrancher ou modifier les réglages du limiteur de vitesse peut-il entraîner une suspension du permis de conduire, même sans excès de vitesse constaté ? Vrai ou Faux ?",r:"Vrai"},
+  {id:70,f:13,q:"Après 2 heures de conduite, quelle est la durée minimale d'un premier arrêt pris en compte comme pause ?",r:"15 min"},
+  {id:71,f:13,q:"L'expression 'transport en commun d'enfants' désigne le transport de personnes dont l'âge est inférieur à... ?",r:"18 ans"},
+  {id:72,f:13,q:"Dans le poids moyen forfaitaire d'un voyageur, le poids des bagages à main est-il inclus ?",r:"Oui"},
+  {id:73,f:13,q:"En ville, un conducteur d'autocar effectuant une excursion peut-il emprunter une voie réservée aux autobus ?",r:"Non"},
+  {id:74,f:13,q:"Le ralentisseur hydraulique est-il situé sur... ?",r:"La transmission"},
+  {id:75,f:13,q:"Dans un autocar neuf, les passagers doivent-ils être prévenus d'attacher leur ceinture avant le démarrage ?",r:"Oui"},
+  {id:76,f:13,q:"Citez un type d'extincteur couramment utilisé pour éteindre une voiture en flammes.",r:"Poudre, mousse ou CO2"},
+  {id:77,f:14,q:"Que signifie une plaque de couleur orange comportant 2 rectangles sans inscription, placée à l'arrière d'un camion ?",r:"Transport de matières dangereuses"},
+  {id:78,f:14,q:"Les temps de pause sont-ils compris dans l'amplitude totale de la journée de travail ?",r:"Oui"},
+  {id:79,f:14,q:"En cas d'excès de vitesse de 42 km/h, pourrai-je repartir si je reconnais l'infraction ?",r:"Non"},
+  {id:80,f:14,q:"Suite au contrôle technique, quelle lettre figure sur le certificat d'immatriculation lorsque le véhicule est refusé sans interdiction de circuler ?",r:"S"},
+  {id:81,f:14,q:"Un autobus articulé est-il réglementairement considéré comme un seul véhicule isolé ?",r:"Oui"},
+  {id:82,f:14,q:"Vous conduisez un autocar neuf de 19 t. À quelle vitesse êtes-vous limité en agglomération sur une portion relevée à 70 km/h ?",r:"70 km/h"},
+  {id:83,f:14,q:"Le dispositif ABS peut-il fonctionner en même temps que le ou les dispositifs ralentisseurs ?",r:"Oui"},
+  {id:84,f:14,q:"En règle générale, quelle est la durée maximale de conduite journalière autorisée ?",r:"9 heures"},
+  {id:85,f:14,q:"Le circuit électrique alimentant le chronotachygraphe est-il indépendant du circuit alimentant le coupe-batterie ?",r:"Oui"},
+  {id:86,f:15,q:"Le modèle allemand, italien ou espagnol d'un constat européen comporte-t-il les mêmes rubriques que le modèle français ?",r:"Oui"},
+  {id:87,f:15,q:"À partir de 60 ans, quelle est la périodicité des contrôles médicaux pour les conducteurs de transports en commun ?",r:"1 an"},
+  {id:88,f:15,q:"Le temps de conduite pour aller du dépôt au collège compte-t-il comme temps de conduite ?",r:"Oui"},
+  {id:89,f:15,q:"Dans un autobus, quel est le poids moyen forfaitaire d'un voyageur adulte avec ses bagages ?",r:"65 kg"},
+  {id:90,f:15,q:"Par temps de brouillard sur autoroute, si la visibilité est inférieure à 50m, quelle est la vitesse maximale autorisée ?",r:"50 km/h"},
+  {id:91,f:15,q:"En règle générale, quelle est la durée minimale du repos hebdomadaire normal (non réduit) ?",r:"45 heures"},
+  {id:92,f:15,q:"Vous suivez un véhicule dont les dispositifs réfléchissants sont triangulaires. Ce véhicule est probablement un autocar. Vrai ou Faux ?",r:"Faux"},
+  {id:93,f:16,q:"En cas d'accident, pouvez-vous demander le témoignage d'un passager de votre autobus ou autocar ?",r:"Oui"},
+  {id:94,f:16,q:"Lorsque le conducteur serre le frein de parc, le cylindre de frein à ressort se remplit d'air. Vrai ou Faux ?",r:"Faux"},
+  {id:95,f:16,q:"L'attestation d'aménagement doit obligatoirement être à bord du véhicule neuf que vous conduisez. Vrai ou Faux ?",r:"Vrai"},
+  {id:96,f:16,q:"Quel symbole devez-vous afficher sur le chronotachygraphe numérique lorsque vous nettoyez votre véhicule ?",r:"Autres tâches"},
+  {id:97,f:16,q:"Circuler avec un seul pneu défoncé n'entraîne pas de contravention si le véhicule possède une roue de secours en bon état. Vrai ou Faux ?",r:"Faux"},
+  {id:98,f:16,q:"Quelle limitation de vitesse est signalée à l'arrière d'un autobus en exploitation de 18 t de PTAC ?",r:"70 km/h"},
+  {id:99,f:16,q:"Sur quelles roues jumelées d'un essieu moteur doit-on monter obligatoirement les pneus neufs : intérieures ou extérieures ?",r:"Roues intérieures"},
+  {id:100,f:16,q:"En règle générale, quelle est la durée minimale de repos journalier ?",r:"11 heures"},
+  {id:101,f:17,q:"En cas d'accident dans lequel votre véhicule est en cause, les forces de l'ordre peuvent-elles vous retirer votre carte conducteur ?",r:"Oui"},
+  {id:102,f:17,q:"Quelle est la catégorie du permis exigée pour conduire un véhicule de transport en commun articulé comportant 90 places ?",r:"D"},
+  {id:103,f:17,q:"Un conducteur effectuant un transport international régulier peut-il conduire 7 périodes consécutives entre 2 repos hebdomadaires ? (1 période = 24h)",r:"Non"},
+  {id:104,f:17,q:"La dernière visite technique de votre autocar date de 8 mois. Êtes-vous en infraction en le conduisant ?",r:"Oui"},
+  {id:105,f:17,q:"Quel est le PTAC maximal d'un véhicule isolé de transport en commun comportant 3 essieux ?",r:"26 t"},
+  {id:106,f:17,q:"Sur le périphérique parisien, les cars peuvent-ils circuler à 90 km/h ? Vrai ou Faux ?",r:"Faux"},
+  {id:107,f:17,q:"Le recreusage des pneumatiques peut-il s'effectuer uniquement par un spécialiste ?",r:"Oui"},
+  {id:108,f:17,q:"Quand le repos journalier est fractionné, quelle doit être la durée minimale totale de ce repos ?",r:"12 heures"},
+  {id:109,f:17,q:"En règle générale, à quelle vitesse un autocar neuf doit-il être limité par le limiteur de vitesse ?",r:"100 km/h"},
+  {id:110,f:18,q:"Une plaque orange sans aucune inscription à l'arrière d'un véhicule signifie transport de matières dangereuses. Vrai ou Faux ?",r:"Faux"},
+  {id:111,f:18,q:"Lors d'un contrôle sur la route, le conducteur est-il obligé de présenter sa carte de qualification conducteur (CQC) ?",r:"Oui"},
+  {id:112,f:18,q:"Une carte d'identification utilisée dans un chronotachygraphe numérique enregistre-t-elle l'immatriculation du véhicule conduit ?",r:"Oui"},
+  {id:113,f:18,q:"Suite au contrôle technique, quelle lettre figure sur le certificat d'immatriculation lorsque le véhicule est refusé avec interdiction de circuler ?",r:"R"},
+  {id:114,f:18,q:"Quelle est la majoration maximale autorisée du PTAC pour un véhicule équipé d'un dispositif ralentisseur pesant 600 kg ?",r:"500 kg"},
+  {id:115,f:18,q:"Sur une autoroute à 4 voies, un autocar de 13m peut-il effectuer un dépassement en empruntant la troisième voie ?",r:"Non"},
+  {id:116,f:18,q:"Quel type de suspension permet généralement de régler la hauteur d'un véhicule lourd ?",r:"Suspension pneumatique"},
+  {id:117,f:18,q:"L'amplitude de la journée de travail comprend-elle le temps de service et les pauses ? Vrai ou Faux ?",r:"Vrai"},
+  {id:118,f:18,q:"Le circuit électrique alimentant la climatisation est-il indépendant du circuit alimentant le coupe-batterie ?",r:"Non"},
+  {id:119,f:19,q:"Le signal de détresse peut-il remplacer le triangle de présignalisation pour un véhicule de plus de 3,5 t de PTAC ?",r:"Non"},
+  {id:120,f:19,q:"Quelle est la catégorie du permis exigée pour conduire un véhicule de transport en commun comportant 45 places à vide ?",r:"D"},
+  {id:121,f:19,q:"Après 4h30 de conduite continue, quelle est la durée minimale de la pause obligatoire ?",r:"45 min"},
+  {id:122,f:19,q:"Lors de la visite technique, l'expert vérifie-t-il le fonctionnement de la climatisation ?",r:"Non"},
+  {id:123,f:19,q:"Vous conduisez un autocar. Quelle est la largeur totale maximale autorisée ?",r:"2,55 m"},
+  {id:124,f:19,q:"Sur une autoroute à 3 voies, un autocar de 13m peut-il effectuer un dépassement en empruntant la 2e voie ? Vrai ou Faux ?",r:"Vrai"},
+  {id:125,f:19,q:"Lors d'un transport international occasionnel, un conducteur peut-il conduire 10 périodes consécutives entre 2 repos hebdomadaires ? (1 période = 24h)",r:"Oui"},
+  {id:126,f:19,q:"Quelle est la périodicité des vérifications techniques obligatoires pour les chronotachygraphes ?",r:"2 ans"},
+  {id:127,f:20,q:"Dans une longue descente, en cas de rupture de freins, si j'utilise une voie de garage, le véhicule sera-t-il gravement endommagé ?",r:"Non"},
+  {id:128,f:20,q:"Quelle est la périodicité des Formations Continues Obligatoires des conducteurs routiers ?",r:"5 ans"},
+  {id:129,f:20,q:"Quelle est la durée de validité de la carte conducteur ?",r:"5 ans"},
+  {id:130,f:20,q:"Pour savoir si un accompagnateur est obligatoire lors d'un transport d'enfants, quel document devez-vous consulter ?",r:"L'attestation d'aménagement"},
+  {id:131,f:20,q:"Quelle est la majoration maximale autorisée du PTAC pour un véhicule isolé de transport en commun équipé d'un ralentisseur ?",r:"400 kg"},
+  {id:132,f:20,q:"Un pont dont la hauteur libre est de 5m sera obligatoirement signalé par un panneau de hauteur limitée. Vrai ou Faux ?",r:"Faux"},
+  {id:133,f:20,q:"Généralement, les boîtes de vitesses manuelles sont composées de trois arbres : primaire, secondaire et... ?",r:"Intermédiaire"},
+  {id:134,f:20,q:"Votre chronotachygraphe est numérique et vous avez perdu votre carte conducteur. Combien de jours maximum pouvez-vous conduire sans carte ?",r:"15 jours"},
+  {id:135,f:20,q:"Une pierre coincée entre des roues jumelées peut-elle entraîner une dégradation d'un pneumatique ? Vrai ou Faux ?",r:"Vrai"},
+  {id:136,f:21,q:"Peut-il y avoir des voyageurs debout à l'étage inférieur d'un autobus à étages ?",r:"Oui"},
+  {id:137,f:21,q:"Un premier arrêt de 15 min sur un parking peut-il être considéré comme une pause ?",r:"Oui"},
+  {id:138,f:21,q:"Quelle est la périodicité des visites techniques auxquelles sont soumis les véhicules de transport en commun ?",r:"6 mois"},
+  {id:139,f:21,q:"La marche arrière permet-elle d'inverser le sens de rotation de l'arbre de transmission ?",r:"Oui"},
+  {id:140,f:21,q:"Les filtres à carburant principaux sont situés entre la pompe d'alimentation et la pompe d'injection. Vrai ou Faux ?",r:"Vrai"},
+  {id:141,f:21,q:"Un chauffeur a conduit 20 heures la semaine précédente. Combien d'heures maximum peut-il conduire la semaine en cours ?",r:"56 heures"},
+  {id:142,f:22,q:"Sur autoroute, en cas d'accident, vaut-il mieux utiliser une borne d'appel ou son téléphone portable pour appeler les secours ?",r:"La borne d'appel"},
+  {id:143,f:22,q:"Si je perds tous les points de mon permis de conduire, pourrai-je continuer à conduire mon car ?",r:"Non"},
+  {id:144,f:22,q:"Est-il possible de conduire le même jour un véhicule avec chronotachygraphe numérique et un avec chronotachygraphe à disque ?",r:"Oui"},
+  {id:145,f:22,q:"Comment appelle-t-on les transports exercés à titre onéreux pour le compte d'un client ?",r:"Transports publics"},
+  {id:146,f:22,q:"Votre véhicule de transport en commun comporte 3 essieux. Quelle peut être sa longueur maximale ?",r:"15 m"},
+  {id:147,f:22,q:"Un véhicule de transport en commun d'un PTAC de 19 t peut-il circuler sur une route avec barrière de dégel à 12 t avec mention demi-charge ?",r:"Oui"},
+  {id:148,f:22,q:"L'embrayage est-il nécessaire uniquement sur les boîtes mécaniques ?",r:"Non"},
+  {id:149,f:22,q:"Un chauffeur a conduit 40 heures la semaine précédente. Combien d'heures maximum peut-il conduire la semaine en cours ?",r:"50 heures"},
+  {id:150,f:22,q:"En circulation, le fait de freiner désactive-t-il obligatoirement le régulateur de vitesse ? Vrai ou Faux ?",r:"Vrai"},
+  {id:151,f:23,q:"En cas d'accident, les données du chronotachygraphe numérique peuvent-elles servir de preuve au tribunal ?",r:"Oui"},
+  {id:152,f:23,q:"Au bout de combien de jours maximum l'entreprise doit-elle télécharger les données de votre carte conducteur ?",r:"28 jours"},
+  {id:153,f:23,q:"Un conducteur peut-il demander une copie papier des données numériques liées à son activité conservées dans l'entreprise ?",r:"Oui"},
+  {id:154,f:23,q:"Lorsque le véhicule est refusé sans interdiction de circuler, dans quel délai la contre-visite doit-elle être effectuée ?",r:"1 mois"},
+  {id:155,f:23,q:"Quel intervalle de sécurité minimum devez-vous respecter sur autoroute à 100 km/h avec un autocar ?",r:"50 m"},
+  {id:156,f:23,q:"Vous conduisez un autocar ancien de 8 t de PTAC non muni d'ABS. À quelle vitesse êtes-vous limité sur autoroute ?",r:"100 km/h"},
+  {id:157,f:23,q:"Une commande de coupe-circuit est-elle obligatoire près du poste de conduite d'un véhicule de transport en commun ?",r:"Oui"},
+];
+
+// ════════════════════════════════════════════════════════════════════════════
+// VÉRIFICATEUR LOCAL
+// ════════════════════════════════════════════════════════════════════════════
+function normalize(s) {
+  return s.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\bh\b/g, " heures ")
+    .replace(/km\/h/g, " km/h ")
+    .replace(/[^a-z0-9,./]/g, " ")
+    .replace(/\s+/g, " ").trim();
+}
+
+const SYNONYMS = {
+  "oui": ["o","yes","exact","si","affirmatif","correct"],
+  "non": ["n","no","negatif","faux"],
+  "vrai": ["v","oui","exact","correct","vrai"],
+  "faux": ["f","non","incorrect","faux"],
+};
+
+function checkAnswer(userRaw, correctRaw) {
+  const u = normalize(userRaw);
+  const c = normalize(correctRaw);
+
+  // Égalité exacte
+  if (u === c) return { correct: true, msg: null };
+
+  // Inclusion (la réponse contient l'essentiel)
+  if (c.length > 3 && u.includes(c)) return { correct: true, msg: null };
+  if (u.length > 3 && c.includes(u)) return { correct: true, msg: null };
+
+  // Synonymes pour Vrai/Faux/Oui/Non
+  for (const [canon, alts] of Object.entries(SYNONYMS)) {
+    if (normalize(correctRaw) === canon) {
+      if (u === canon || alts.includes(u)) return { correct: true, msg: null };
+    }
+  }
+
+  // Variantes numériques communes (9h = 9 heures, 4h30 = 4h 30 = 4h30min…)
+  const numU = u.replace(/\s*(heures?|h)\s*/g, "h").replace(/\s*(minutes?|min)\s*/g, "min");
+  const numC = c.replace(/\s*(heures?|h)\s*/g, "h").replace(/\s*(minutes?|min)\s*/g, "min");
+  if (numU === numC) return { correct: true, msg: null };
+
+  // Tolérance 1 faute (Levenshtein simplifié pour mots courts)
+  if (c.length <= 12 && levenshtein(u, c) <= 1) return { correct: true, msg: null };
+
+  // Mots-clés : vérifie si les mots essentiels de la réponse sont présents
+  const keyWords = c.split(" ").filter(w => w.length > 3);
+  if (keyWords.length > 0) {
+    const found = keyWords.filter(w => u.includes(w));
+    if (found.length === keyWords.length) return { correct: true, msg: null };
+    if (keyWords.length >= 2 && found.length >= Math.ceil(keyWords.length * 0.75))
+      return { correct: true, msg: null };
+  }
+
+  return {
+    correct: false,
+    msg: `Réponse attendue : <strong>${correctRaw}</strong>`
+  };
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const d = Array.from({length: m+1}, (_, i) => Array.from({length: n+1}, (_, j) => j === 0 ? i : 0));
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      d[i][j] = a[i-1] === b[j-1] ? d[i-1][j-1] : 1 + Math.min(d[i-1][j], d[i][j-1], d[i-1][j-1]);
+  return d[m][n];
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ÉTAT
+// ════════════════════════════════════════════════════════════════════════════
+let pool = [], current = 0, scoreOk = 0, scoreKo = 0, history = [];
+let selectedCount = 10, selectedFiche = "all";
+let checked = false, lastCorrect = false;
+
+// ════════════════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════════════════
+(function init() {
+  // Populate fiche select
+  const sel = document.getElementById("fiche-select");
+  const fiches = [...new Set(QUESTIONS.map(q => q.f))].sort((a,b) => a-b);
+  sel.innerHTML = `<option value="all">Toutes les fiches (${QUESTIONS.length})</option>`;
+  fiches.forEach(f => {
+    const n = QUESTIONS.filter(q => q.f === f).length;
+    sel.innerHTML += `<option value="${f}">Fiche ${f} — ${n} questions</option>`;
+  });
+  sel.addEventListener("change", e => { selectedFiche = e.target.value; });
+
+  document.querySelectorAll(".count-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".count-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedCount = parseInt(btn.dataset.n);
+    });
+  });
+
+})();
+
+// ════════════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+function goHome() { showScreen("screen-home"); }
+
+function startQuiz() {
+  const source = selectedFiche === "all"
+    ? QUESTIONS
+    : QUESTIONS.filter(q => q.f === parseInt(selectedFiche));
+  pool = [...source].sort(() => Math.random() - 0.5).slice(0, Math.min(selectedCount, source.length));
+  current = 0; scoreOk = 0; scoreKo = 0; history = [];
+  renderQuestion();
+  showScreen("screen-quiz");
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// QUIZ LOGIC
+// ════════════════════════════════════════════════════════════════════════════
+function renderQuestion() {
+  checked = false;
+  const q = pool[current];
+
+  document.getElementById("quiz-meta").textContent = `FICHE ${q.f} · ${current+1}/${pool.length}`;
+  document.getElementById("score-ok").textContent = `✓ ${scoreOk}`;
+  document.getElementById("score-ko").textContent = `✗ ${scoreKo}`;
+  document.getElementById("progress-fill").style.width = `${(current/pool.length)*100}%`;
+  document.getElementById("question-text").textContent = q.q;
+
+  const inp = document.getElementById("answer-input");
+  inp.value = "";
+  inp.className = "answer-input";
+  inp.disabled = false;
+  inp.focus();
+
+  document.getElementById("feedback").className = "feedback";
+
+  // Reset boutons
+  const row = document.getElementById("btn-row");
+  row.innerHTML = `
+    <button class="btn btn-verify" id="btn-verify" onclick="verify()" disabled>VÉRIFIER</button>
+    <button class="btn btn-skip" onclick="skip()">PASSER</button>
+  `;
+}
+
+function handleKey(e) {
+  if (e.key === "Enter") {
+    if (!checked) verify();
+    else advanceNext();
+  }
+}
+
+function verify() {
+  const inp = document.getElementById("answer-input");
+  const val = inp.value.trim();
+  if (!val) return;
+
+  const q = pool[current];
+  const result = checkAnswer(val, q.r);
+  checked = true;
+  lastCorrect = result.correct;
+
+  // Style input
+  inp.className = "answer-input " + (result.correct ? "correct" : "wrong");
+  inp.disabled = true;
+
+  // Feedback
+  const fb = document.getElementById("feedback");
+  const fbAnswer = document.getElementById("fb-answer");
+
+  document.getElementById("fb-icon").textContent = result.correct ? "✓" : "✗";
+  document.getElementById("fb-title").textContent = result.correct ? "Correct !" : "Incorrect";
+
+  if (result.correct) {
+    document.getElementById("fb-body").textContent = "";
+    fbAnswer.style.display = "none";
+    fb.className = "feedback correct";
+    scoreOk++;
+  } else {
+    document.getElementById("fb-body").innerHTML = result.msg || "";
+    fbAnswer.style.display = "none";
+    fb.className = "feedback wrong";
+    scoreKo++;
+  }
+
+  history.push({ q, userAnswer: val, correct: result.correct });
+
+  // Boutons suivant
+  const row = document.getElementById("btn-row");
+  if (result.correct) {
+    row.innerHTML = `<button class="btn btn-next-solo" onclick="advanceNext()">SUIVANT →</button>`;
+  } else {
+    row.innerHTML = `
+      <button class="btn btn-next-ok" onclick="advanceNext()">✓ Compris</button>
+      <button class="btn btn-next-ko" onclick="advanceNext()">✗ Suivant</button>
+    `;
+  }
+}
+
+function skip() {
+  const q = pool[current];
+  history.push({ q, userAnswer: "", correct: false });
+  scoreKo++;
+  advanceNext(true);
+}
+
+function advanceNext(fromSkip = false) {
+  if (!fromSkip && !checked) return;
+  if (current + 1 >= pool.length) {
+    showResult();
+  } else {
+    current++;
+    renderQuestion();
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// RESULT
+// ════════════════════════════════════════════════════════════════════════════
+function showResult() {
+  const total = scoreOk + scoreKo;
+  const pct = total > 0 ? Math.round((scoreOk / total) * 100) : 0;
+
+  document.getElementById("result-emoji").textContent = pct >= 75 ? "🎉" : pct >= 50 ? "💪" : "📚";
+  const pctEl = document.getElementById("result-pct");
+  pctEl.textContent = pct + "%";
+  pctEl.className = "result-pct " + (pct >= 75 ? "great" : pct >= 50 ? "ok" : "bad");
+  document.getElementById("result-sub").textContent = `✓ ${scoreOk} CORRECT  ·  ✗ ${scoreKo} FAUX`;
+
+  const errors = history.filter(h => !h.correct);
+  const errLabel = document.getElementById("errors-label");
+  const errList = document.getElementById("errors-list");
+
+  if (errors.length === 0) {
+    errLabel.style.display = "none";
+    errList.innerHTML = '<p style="color:var(--green);text-align:center;font-size:14px;padding:12px">✓ Toutes les réponses correctes !</p>';
+  } else {
+    errLabel.style.display = "block";
+    errList.innerHTML = errors.map(h => `
+      <div class="error-item">
+        <p class="error-q">${h.q.q}</p>
+        ${h.userAnswer ? `<p class="error-user">Votre réponse : <em>${h.userAnswer}</em></p>` : ""}
+        <p class="error-answer">✓ ${h.q.r}</p>
+      </div>
+    `).join("");
+  }
+
+  showScreen("screen-result");
+}
+</script>
+</body>
+</html>
