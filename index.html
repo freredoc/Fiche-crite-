@@ -405,7 +405,7 @@ function checkAns(u0,c0){
   if(c.length>3&&u.includes(c))return true;
   if(u.length>3&&c.includes(u))return true;
   for(const[k,alts]of Object.entries(BOOL)){if(c===k&&(u===k||alts.includes(u)))return true;}
-  const parts=c0.split(/[,\/\-–]/).map(p=>norm(p.trim())).filter(p=>p.length>1);
+  const parts=c0.split(/[,\/\-–]|\bou\b/i).map(p=>norm(p.trim())).filter(p=>p.length>1);
   if(parts.length>1&&parts.some(p=>u.includes(p)||p.includes(u)))return true;
   if(c.length<=14&&lev(u,c)<=2)return true;
   const keys=c.split(" ").filter(w=>w.length>3);
