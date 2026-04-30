@@ -39,6 +39,8 @@
   .feedback{border-radius:10px;padding:14px 16px;margin-bottom:10px;display:none;}
   .feedback.correct{background:var(--green-dim);border:2px solid var(--green);display:block;}
   .feedback.wrong{background:var(--red-dim);border:2px solid var(--red);display:block;}
+  .feedback.typo{background:#1c1a08;border:2px solid #f59e0b;display:block;}
+  .feedback.typo .fb-title{color:#f59e0b;}
   .fb-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
   .fb-icon{font-size:18px;line-height:1;}
   .fb-title{font-size:13px;font-weight:700;}
@@ -52,6 +54,7 @@
   .btn-skip{background:var(--input-bg);color:var(--muted);border:1px solid var(--border)!important;}
   .btn-ok{background:var(--green);color:#0d1b2a;}
   .btn-ko{background:var(--red-dim);color:var(--red);border:2px solid var(--red)!important;}
+  .btn-typo{background:#1a2a1a;color:#94a3b8;border:1px solid #334155!important;font-size:12px;}
   .btn-menu{width:100%;padding:10px;background:transparent;color:var(--muted);border:none;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:1px;margin-top:4px;}
   .result-card{background:var(--card);border:2px solid var(--border);border-radius:18px;padding:36px 24px 28px;}
   .result-hero{text-align:center;margin-bottom:24px;}
@@ -402,11 +405,11 @@ function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>A
 function checkAns(u0,c0){
   const u=norm(u0),c=norm(c0);
   if(u===c)return true;
-  if(c.length>3&&u.includes(c))return true;
-  if(u.length>3&&c.includes(u))return true;
+  if(u.length>0&&c.includes(u)&&u.length>=1)return true;
+  if(c.length>0&&u.includes(c)&&c.length>=1)return true;
   for(const[k,alts]of Object.entries(BOOL)){if(c===k&&(u===k||alts.includes(u)))return true;}
-  const parts=c0.split(/[,\/\-–]|\bou\b/i).map(p=>norm(p.trim())).filter(p=>p.length>1);
-  if(parts.length>1&&parts.some(p=>u.includes(p)||p.includes(u)))return true;
+  const parts=c0.split(/[,\/\-–]|\bou\b/i).map(p=>norm(p.trim())).filter(p=>p.length>=1);
+  if(parts.length>1&&parts.some(p=>u===p||u.includes(p)||p.includes(u)))return true;
   if(c.length<=14&&lev(u,c)<=2)return true;
   const keys=c.split(" ").filter(w=>w.length>3);
   if(keys.length>0&&keys.filter(w=>u.includes(w)).length>=Math.ceil(keys.length*.75))return true;
@@ -489,7 +492,7 @@ function renderHistory(){
   p.innerHTML=[...history].reverse().map((h,i)=>{
     const idx=history.length-1-i;
     const ok=h.correct;
-    const label=`FICHE ${h.q.f} · Q${h.q.n||"?"}`;
+    const label=`FICHE ${h.q.f} · Q${h.q.n||"?"}${h.typo?" ✏️":""}`;
     const userAns=h.userAnswer||"(passé)";
     return `<div class="hist-item">
       <span class="hist-icon">${ok?"✓":"✗"}</span>
@@ -552,9 +555,32 @@ function verify(){
   updateHistoryBtn();
   document.getElementById("btn-row").innerHTML=ok
     ?`<button class="btn btn-ok" onclick="advance()">SUIVANT →</button>`
-    :`<button class="btn btn-ok" onclick="advance()">✓ Compris</button><button class="btn btn-ko" onclick="advance()">→ Suivant</button>`;
+    :`<button class="btn btn-ok" onclick="advance()">✓ Compris</button><button class="btn btn-ko" onclick="advance()">→ Suivant</button><button class="btn btn-typo" onclick="markTypo()">✏️ Faute de frappe</button>`;
 }
 
+function markTypo(){
+  // Retroactively mark last answer as correct (typo)
+  if(history.length>0){
+    const last=history[history.length-1];
+    if(!last.correct){
+      last.correct=true;
+      last.typo=true;
+      scoreKo--;scoreOk++;
+      document.getElementById("score-ok").textContent="✓ "+scoreOk;
+      document.getElementById("score-ko").textContent="✗ "+scoreKo;
+    }
+  }
+  // Change feedback style to orange
+  const fb=document.getElementById("feedback");
+  if(fb){fb.className="feedback typo";}
+  const fbt=document.getElementById("fb-title");
+  if(fbt)fbt.textContent="Faute de frappe";
+  // Remove typo button
+  const row=document.getElementById("btn-row");
+  if(row)row.innerHTML="<button class='btn btn-ok' onclick='advance()'>SUIVANT →</button>";
+  updateHistoryBtn();
+  renderHistory();
+}
 function skip(){clearInterval(timerInterval);history.push({q:pool[current],userAnswer:"(passé)",correct:false});scoreKo++;updateHistoryBtn();checked=true;advance();}
 
 function advance(){
